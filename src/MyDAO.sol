@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
+import {TokenDAO} from "./TokenDAO.sol";
+
 contract DAO {
     struct Proposal {
         string title;
@@ -14,6 +16,7 @@ contract DAO {
 
     uint256 public proposalCount;
     mapping(uint256 => Proposal) public proposals;
+    TokenDAO public token;
 
     event ProposalCreated(
         uint256 proposalId,
@@ -23,12 +26,18 @@ contract DAO {
         address proposer
     );
 
+    constructor(address _tokenAddress) {
+        require(_tokenAddress != address(0), "Invalid token address");
+        token = TokenDAO(_tokenAddress);
+    }
+
     function createProposal(
         string memory title,
         string memory description,
         uint256 votingPeriod
     ) external returns (uint256 proposalId) {
         require(votingPeriod > 0, "Invalid voting period");
+        require(token.balanceOf(msg.sender) >= 1 ether, "Insufficient tokens");
 
         proposalCount++;
 
