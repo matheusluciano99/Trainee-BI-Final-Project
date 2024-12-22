@@ -65,16 +65,40 @@ contract DAO {
     }
 
     function castVote(uint256 proposalId, bool support) external {
-        // TODO: Implement
+        require(
+            proposalId > 0 && proposalId <= proposalCount,
+            "Proposal does not exist"
+        );
+        Proposal storage proposal = proposals[proposalId];
+        require(proposal.endTime > block.timestamp, "Voting period has ended");
+        require(proposal.proposer != address(0), "Proposer does not exist");
+        require(!proposal.executed, "Proposal already executed");
+        require(
+            token.balanceOf(msg.sender) >= 1 ether,
+            "Insufficient tokens to vote"
+        );
+
+        uint256 voterTokens = token.balanceOf(msg.sender);
+
+        if (support) {
+            proposal.forVotes += voterTokens;
+        } else {
+            proposal.againstVotes += voterTokens;
+        }
     }
 
     function executeProposal(uint256 proposalId) external {
-        // TODO: Implement
+        require(
+            proposalId > 0 && proposalId <= proposalCount,
+            "Proposal does not exist"
+        );
+        Proposal storage proposal = proposals[proposalId];
+        proposal.executed = true;
     }
 
     function getProposal(
         uint256 proposalId
     ) external view returns (Proposal memory) {
-        // TODO: Implement
+        return proposals[proposalId];
     }
 }
