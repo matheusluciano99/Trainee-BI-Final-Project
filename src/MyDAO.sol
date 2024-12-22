@@ -12,19 +12,29 @@ contract DAO {
         uint256 againstVotes;
         bool executed;
         address proposer;
+        mapping(address => bool) hasVoted; // To prevent multiple voting
     }
 
     uint256 public proposalCount;
-    mapping(uint256 => Proposal) public proposals;
+    mapping(uint256 => Proposal) private proposals;
     TokenDAO public token;
 
     event ProposalCreated(
-        uint256 proposalId,
+        uint256 indexed proposalId,
         string title,
         string description,
         uint256 endTime,
-        address proposer
+        address indexed proposer
     );
+
+    event VoteCast(
+        uint256 indexed proposalId,
+        address indexed voter,
+        bool support,
+        uint256 weight
+    );
+
+    event ProposalExecuted(uint256 indexed proposalId);
 
     constructor(address _tokenAddress) {
         require(_tokenAddress != address(0), "Invalid token address");
@@ -43,15 +53,14 @@ contract DAO {
 
         uint256 endTime = block.timestamp + votingPeriod;
 
-        proposals[proposalCount] = Proposal({
-            title: title,
-            description: description,
-            endTime: endTime,
-            forVotes: 0,
-            againstVotes: 0,
-            executed: false,
-            proposer: msg.sender
-        });
+        Proposal storage newProposal = proposals[proposalCount];
+        newProposal.title = title;
+        newProposal.description = description;
+        newProposal.endTime = endTime;
+        newProposal.forVotes = 0;
+        newProposal.againstVotes = 0;
+        newProposal.executed = false;
+        newProposal.proposer = msg.sender;
 
         emit ProposalCreated(
             proposalCount,
@@ -71,8 +80,8 @@ contract DAO {
         );
         Proposal storage proposal = proposals[proposalId];
         require(proposal.endTime > block.timestamp, "Voting period has ended");
-        require(proposal.proposer != address(0), "Proposer does not exist");
         require(!proposal.executed, "Proposal already executed");
+        require(!proposal.hasVoted[msg.sender], "Already voted");
         require(
             token.balanceOf(msg.sender) >= 1 ether,
             "Insufficient tokens to vote"
@@ -80,11 +89,15 @@ contract DAO {
 
         uint256 voterTokens = token.balanceOf(msg.sender);
 
+        proposal.hasVoted[msg.sender] = true;
+
         if (support) {
             proposal.forVotes += voterTokens;
         } else {
             proposal.againstVotes += voterTokens;
         }
+
+        emit VoteCast(proposalId, msg.sender, support, voterTokens);
     }
 
     function executeProposal(uint256 proposalId) external {
@@ -94,11 +107,34 @@ contract DAO {
         );
         Proposal storage proposal = proposals[proposalId];
         proposal.executed = true;
+
+        emit ProposalExecuted(proposalId);
     }
 
     function getProposal(
         uint256 proposalId
-    ) external view returns (Proposal memory) {
-        return proposals[proposalId];
+    )
+        external
+        view
+        returns (
+            string memory,
+            string memory,
+            uint256,
+            uint256,
+            uint256,
+            bool,
+            address
+        )
+    {
+        Proposal storage proposal = proposals[proposalId];
+        return (
+            proposal.title,
+            proposal.description,
+            proposal.endTime,
+            proposal.forVotes,
+            proposal.againstVotes,
+            proposal.executed,
+            proposal.proposer
+        );
     }
 }

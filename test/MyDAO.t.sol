@@ -17,12 +17,21 @@ contract DAOTest is Test {
 
     // Event to be used in the test
     event ProposalCreated(
-        uint256 proposalId,
+        uint256 indexed proposalId,
         string title,
         string description,
         uint256 endTime,
-        address proposer
+        address indexed proposer
     );
+
+    event VoteCast(
+        uint256 indexed proposalId,
+        address indexed voter,
+        bool support,
+        uint256 weight
+    );
+
+    event ProposalExecuted(uint256 indexed proposalId);
 
     function setUp() public {
         token = new TokenDAO(INITIAL_SUPPLY);
@@ -41,6 +50,7 @@ contract DAOTest is Test {
     }
 
     /* ------- BEGINNING CREATE PROPOSAL TESTS ------- */
+
     function testUserCanCreateProposal() public {
         // User creates a proposal
         string memory title = "Proposal by USER";
@@ -63,7 +73,7 @@ contract DAOTest is Test {
             ,
             ,
             address proposer
-        ) = dao.proposals(proposalId);
+        ) = dao.getProposal(proposalId);
 
         assertEq(storedTitle, title, "Proposal title is incorrect");
         assertEq(
@@ -114,7 +124,7 @@ contract DAOTest is Test {
             ,
             ,
             address proposer
-        ) = dao.proposals(proposalId);
+        ) = dao.getProposal(proposalId);
 
         assertEq(storedTitle, title, "Proposal title is incorrect");
         assertEq(
@@ -153,6 +163,7 @@ contract DAOTest is Test {
         vm.expectRevert("Invalid voting period");
         dao.createProposal(title, description, 0);
     }
+
     /* ------- ENDING CREATE PROPOSAL TESTS ------- */
 
     /* ------- BEGINNING CAST VOTE TESTS ------- */
@@ -173,7 +184,7 @@ contract DAOTest is Test {
         dao.castVote(proposalId, true);
 
         // Verificar os votos a favor
-        (, , , uint256 forVotes, uint256 againstVotes, , ) = dao.proposals(
+        (, , , uint256 forVotes, uint256 againstVotes, , ) = dao.getProposal(
             proposalId
         );
         assertEq(forVotes, AIRDROP, "For votes are incorrect");
@@ -198,7 +209,7 @@ contract DAOTest is Test {
         dao.castVote(proposalId, false);
 
         // Verificar os votos contra
-        (, , , uint256 forVotes, uint256 againstVotes, , ) = dao.proposals(
+        (, , , uint256 forVotes, uint256 againstVotes, , ) = dao.getProposal(
             proposalId
         );
         assertEq(forVotes, 0, "For votes should be zero");
@@ -278,5 +289,39 @@ contract DAOTest is Test {
         dao.castVote(proposalId, true);
     }
 
+    function testCannotVoteMultipleTimes() public {
+        uint256 proposalId = dao.createProposal("Title", "Description", 1 days);
+
+        vm.prank(USER);
+        dao.castVote(proposalId, true);
+
+        vm.expectRevert("Already voted");
+        vm.prank(USER);
+        dao.castVote(proposalId, true);
+    }
+
+    function testVoteEmitsEvent() public {
+        uint256 proposalId = dao.createProposal("Title", "Description", 1 days);
+
+        vm.prank(USER);
+        vm.expectEmit(true, true, true, true);
+        emit VoteCast(proposalId, USER, true, AIRDROP);
+        dao.castVote(proposalId, true);
+    }
+
     /* ------- ENDING CAST VOTE TESTS ------- */
+
+    /* ------- BEGINNING EXECUTE PROPOSAL TESTS ------- */
+
+    function testExecuteProposalEmitsEvent() public {
+        uint256 proposalId = dao.createProposal("Title", "Description", 1 days);
+
+        vm.warp(block.timestamp + 2 days);
+
+        vm.expectEmit(true, true, true, true);
+        emit ProposalExecuted(proposalId);
+        dao.executeProposal(proposalId);
+    }
+
+    /* ------- ENDING EXECUTE PROPOSAL TESTS ------- */
 }
