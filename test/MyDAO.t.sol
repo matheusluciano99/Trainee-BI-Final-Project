@@ -4,6 +4,7 @@ pragma solidity ^0.8.13;
 import {Test, console} from "../lib/forge-std/src/Test.sol";
 import {DAO} from "../src/MyDAO.sol";
 import {TokenDAO} from "../src/TokenDAO.sol";
+import {DeployDAO} from "../script/DeployMyDAO.s.sol";
 
 contract DAOTest is Test {
     DAO dao;
@@ -34,14 +35,20 @@ contract DAOTest is Test {
     event ProposalExecuted(uint256 indexed proposalId);
 
     function setUp() public {
-        token = new TokenDAO(INITIAL_SUPPLY);
-        dao = new DAO(address(token));
+        DeployDAO deployDAO = new DeployDAO();
+        (token, dao) = deployDAO.run();
 
-        // Distribute tokens to users
+        // Pegando o endereço do deployer atual que recebeu os tokens
+        address deployer = address(this);
+
+        // Distribuir tokens para usuários
+        vm.prank(deployer); // Simular como o deployer
         token.transfer(USER, AIRDROP);
+
+        vm.prank(deployer);
         token.transfer(USER2, 2 * AIRDROP);
 
-        // Approve the DAO to spend user tokens
+        // Usuários aprovam DAO para gastar seus tokens
         vm.prank(USER);
         token.approve(address(dao), AIRDROP);
 
