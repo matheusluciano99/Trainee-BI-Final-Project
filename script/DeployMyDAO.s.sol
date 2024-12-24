@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import {Script, console} from "../lib/forge-std/src/Script.sol";
 import {TokenDAO} from "../src/TokenDAO.sol";
-import {DAO} from "../src/MyDAO.sol";
+import {DAO} from "../src/DAO.sol";
 
 contract DeployDAO is Script {
     uint256 public constant INITIAL_SUPPLY = 10000 ether;

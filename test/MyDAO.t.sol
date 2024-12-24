@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import {Test, console} from "../lib/forge-std/src/Test.sol";
-import {DAO} from "../src/MyDAO.sol";
+import {DAO} from "../src/DAO.sol";
 import {TokenDAO} from "../src/TokenDAO.sol";
 import {DeployDAO} from "../script/DeployMyDAO.s.sol";
 

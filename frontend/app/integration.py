@@ -1,4 +1,5 @@
 from web3 import Web3
+import json
 import os
 from dotenv import load_dotenv
 
@@ -6,18 +7,34 @@ load_dotenv()
 
 # Configurações
 RPC_URL = os.getenv("RPC_URL")
-DAO_ADDRESS = os.getenv("DAO_CONTRACT_ADDRESS")
-TOKEN_ADDRESS = os.getenv("TOKEN_CONTRACT_ADDRESS")
+DAO_ADDRESS = os.getenv("DAO_ADDRESS")
+TOKEN_ADDRESS = os.getenv("TOKEN_ADDRESS")
 PRIVATE_KEY = os.getenv("PRIVATE_KEY")
+
+print(f"RPC_URL: {RPC_URL}")
+print(f"DAO_ADDRESS: {DAO_ADDRESS}")
+print(f"TOKEN_ADDRESS: {TOKEN_ADDRESS}")
+print(f"PRIVATE_KEY: {'***' if PRIVATE_KEY else PRIVATE_KEY}")
 
 # Conexão com o nó
 web3 = Web3(Web3.HTTPProvider(RPC_URL))
 if not web3.is_connected():
     raise Exception("Failed to connect to the blockchain.")
 
+# Função para carregar a ABI a partir do arquivo JSON
+def load_abi(contract_name:str):
+    abi_path = os.path.join("../out", contract_name, f"{contract_name.strip('.sol')}.json")
+    if not os.path.exists(abi_path):
+        raise FileNotFoundError(f"ABI não encontrada para {contract_name} em {abi_path}.")
+    with open(abi_path, 'r') as f:
+        artifact = json.load(f)
+        if "abi" not in artifact:
+            raise KeyError(f"'abi' não encontrado no arquivo {abi_path}.")
+        return artifact["abi"]
+
 # Endereços e ABI dos contratos
-dao_abi = [...]  # ABI do contrato DAO
-token_abi = [...]  # ABI do contrato TokenDAO
+dao_abi = load_abi("DAO.sol")
+token_abi = load_abi("TokenDAO.sol")
 
 # Instância dos contratos
 dao_contract = web3.eth.contract(address=DAO_ADDRESS, abi=dao_abi)
