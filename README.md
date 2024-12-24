@@ -7,3 +7,4 @@ Para rodar o projeto, instale as seguintes dependencias:
 - Foundry
 - Reflex
 - Web3.py
+- python-dotenv

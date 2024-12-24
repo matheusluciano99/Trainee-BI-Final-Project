@@ -1,4 +1,5 @@
 import reflex as rx
+from .integration import list_proposals, vote, execute_proposal
 
 def create_h3_heading(text):
     """Create an h3 heading with specific styling."""
@@ -204,29 +205,27 @@ def create_header_container():
 
 
 def create_voting_section():
-    """Create the voting section with active proposals."""
-    return rx.box(
-        create_h2_heading(text="Active Proposals"),
-        rx.box(
-            create_proposal_box(
-                title="Proposal 1: Increase Treasury Allocation",
-                description="Should we increase the treasury allocation by 10% for community projects?",
+    """Dynamically create boxes for each proposal using integration.py."""
+    proposals = list_proposals()
+    proposal_boxes = []
+    for prop in proposals:
+        prop_box = rx.box(
+            rx.heading(f"#{prop['id']} - {prop['title']}", as_="h3"),
+            rx.text(prop['description']),
+            rx.text(f"For votes: {prop['forVotes']}"),
+            rx.text(f"Against votes: {prop['againstVotes']}"),
+            rx.button("Vote Yes", on_click=lambda: vote(prop['id'], True, "YOUR_ADDRESS_HERE")),
+            rx.button("Vote No", on_click=lambda: vote(prop['id'], False, "YOUR_ADDRESS_HERE")),
+            rx.cond(
+                prop['executed'],
+                rx.text("Proposal Executed"),
+                rx.button("Execute", on_click=lambda: execute_proposal(prop['id'], "YOUR_ADDRESS_HERE"))
             ),
-            create_proposal_box(
-                title="Proposal 2: New Governance Model",
-                description="Do you support implementing a new tiered governance model?",
-            ),
-            display="flex",
-            flex_direction="column",
-            gap="1.5rem",
-        ),
-        id="voting-section",
-        background_color="#ffffff",
-        margin_bottom="2rem",
-        padding="1.5rem",
-        border_radius="0.5rem",
-        box_shadow="0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-    )
+            border_bottom_width="1px",
+            padding_bottom="1rem",
+        )
+        proposal_boxes.append(prop_box)
+    return rx.box(*proposal_boxes)
 
 
 def create_results_section():
