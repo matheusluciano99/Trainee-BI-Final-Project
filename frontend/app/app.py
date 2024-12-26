@@ -33,7 +33,7 @@ def create_paragraph(text):
 
 
 def create_styled_button(
-    hover_styles, background_color, text
+    hover_styles, background_color, text, proposal_id, user_address
 ):
     """Create a styled button with customizable hover effects and background color."""
     return rx.el.button(
@@ -47,33 +47,89 @@ def create_styled_button(
         padding_bottom="0.5rem",
         border_radius="0.25rem",
         color="#ffffff",
+        on_click=lambda: vote(proposal_id, True, user_address),
     )
 
 
-def create_voting_buttons():
+def create_voting_buttons(proposal_id, user_address):
     """Create a flex container with 'Yes' and 'No' voting buttons."""
+
+    # [ADDED] Passamos on_click como parâmetro para o botão, chamando 'vote' do integration.py
+    vote_yes_button = rx.el.button(
+        "Vote Yes",
+        background_color="#10B981",
+        font_weight="700",
+        _hover={"background-color": "#059669"},
+        padding_left="1rem",
+        padding_right="1rem",
+        padding_top="0.5rem",
+        padding_bottom="0.5rem",
+        border_radius="0.25rem",
+        color="#ffffff",
+        on_click=lambda: vote(proposal_id, True, user_address),
+    )
+
+    vote_no_button = rx.el.button(
+        "Vote No",
+        background_color="#EF4444",
+        font_weight="700",
+        _hover={"background-color": "#DC2626"},
+        padding_left="1rem",
+        padding_right="1rem",
+        padding_top="0.5rem",
+        padding_bottom="0.5rem",
+        border_radius="0.25rem",
+        color="#ffffff",
+        on_click=lambda: vote(proposal_id, False, user_address),
+    )
+
     return rx.flex(
-        create_styled_button(
-            hover_styles={"background-color": "#059669"},
-            background_color="#10B981",
-            text=" Vote Yes ",
-        ),
-        create_styled_button(
-            hover_styles={"background-color": "#DC2626"},
-            background_color="#EF4444",
-            text=" Vote No ",
-        ),
+        vote_yes_button,
+        vote_no_button,
         display="flex",
         column_gap="1rem",
     )
 
 
-def create_proposal_box(title, description):
-    """Create a box containing a proposal title, description, and voting buttons."""
+def create_proposal_box(prop):
+    """
+    Create a box containing a proposal title, description, voting buttons,
+    and, opcionalmente, an 'Execute Proposal' button se ainda não foi executado.
+    """
+    proposal_id = prop["id"]
+    executed = prop["executed"]
+    title = prop["title"]
+    description = prop["description"]
+
+    # [ADDED] Exemplo de endereço hardcoded ou obtido do estado do front.
+    # Idealmente, você buscaria o endereço conectado pelo usuário (“wallet-address”).
+    user_address = "0xSeuEnderecoAqui"  
+
+    proposal_title = create_h3_heading(text=f"Proposal #{proposal_id}: {title}")
+    proposal_desc = create_paragraph(text=description)
+    voting_buttons = create_voting_buttons(proposal_id, user_address)
+
+    # [ADDED] Botão para executar a proposta (visível apenas se !executed)
+    execute_button = rx.el.button(
+        "Execute Proposal",
+        background_color="#3B82F6",
+        font_weight="700",
+        _hover={"background-color": "#2563EB"},
+        padding_left="1rem",
+        padding_right="1rem",
+        padding_top="0.5rem",
+        padding_bottom="0.5rem",
+        border_radius="0.25rem",
+        color="#ffffff",
+        on_click=lambda: execute_proposal(proposal_id, user_address),
+        display="block" if not executed else "none",  # Esconde se já executada
+    )
+
     return rx.box(
-        create_h3_heading(text=title),
-        create_paragraph(text=description),
-        create_voting_buttons(),
+        proposal_title,
+        proposal_desc,
+        voting_buttons,
+        execute_button,
         border_bottom_width="1px",
         padding_bottom="1rem",
     )
@@ -133,9 +189,29 @@ def create_result_box(
         ),
     )
 
+# [ADDED] Nova função que retorna o JS para conectar à MetaMask
+def connect_wallet_js():
+    return """
+    if (typeof window.ethereum === 'undefined') {
+      alert("MetaMask não encontrada. Verifique se está instalada e habilitada em seu navegador.");
+      return;
+    }
+    window.ethereum.request({ method: 'eth_requestAccounts' })
+      .then(accounts => {
+        const walletSpan = document.getElementById('wallet-address');
+        if (walletSpan) {
+          walletSpan.textContent = accounts[0] || 'Nenhuma conta encontrada';
+          walletSpan.style.display = 'inline-block';
+        }
+      })
+      .catch(err => {
+        console.error("Erro ao conectar a carteira:", err);
+      });
+    """
 
 def create_connect_wallet_button():
     """Create a 'Connect Wallet' button with specific styling."""
+    # [ADDED] on_click usando rx.run_js para rodar o JS acima no lado do cliente.
     return rx.el.button(
         " Connect Wallet ",
         id="connect-wallet",
@@ -148,7 +224,10 @@ def create_connect_wallet_button():
         padding_bottom="0.5rem",
         border_radius="0.25rem",
         color="#ffffff",
+        on_click=rx.run_script(connect_wallet_js()),  # [ADDED]
     )
+
+
 
 
 def create_header():
@@ -209,22 +288,8 @@ def create_voting_section():
     proposals = list_proposals()
     proposal_boxes = []
     for prop in proposals:
-        prop_box = rx.box(
-            rx.heading(f"#{prop['id']} - {prop['title']}", as_="h3"),
-            rx.text(prop['description']),
-            rx.text(f"For votes: {prop['forVotes']}"),
-            rx.text(f"Against votes: {prop['againstVotes']}"),
-            rx.button("Vote Yes", on_click=lambda: vote(prop['id'], True, "YOUR_ADDRESS_HERE")),
-            rx.button("Vote No", on_click=lambda: vote(prop['id'], False, "YOUR_ADDRESS_HERE")),
-            rx.cond(
-                prop['executed'],
-                rx.text("Proposal Executed"),
-                rx.button("Execute", on_click=lambda: execute_proposal(prop['id'], "YOUR_ADDRESS_HERE"))
-            ),
-            border_bottom_width="1px",
-            padding_bottom="1rem",
-        )
-        proposal_boxes.append(prop_box)
+        proposal_boxes.append(create_proposal_box(prop))
+
     return rx.box(*proposal_boxes)
 
 
