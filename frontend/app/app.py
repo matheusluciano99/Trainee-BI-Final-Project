@@ -1,73 +1,5 @@
 import reflex as rx
-from .integration import list_proposals, vote, execute_proposal
-
-class AppState:
-    @staticmethod
-    def connect_wallet_js():
-        return """
-        if (typeof window.ethereum === 'undefined') {
-            alert("MetaMask não encontrada. Verifique se está instalada e habilitada em seu navegador.");
-            return;
-        }
-        
-        // Método que dispara o pop-up de conexão
-        window.ethereum.request({
-            method: 'wallet_requestPermissions',
-            params: [{ eth_accounts: {} }]
-        })
-        .then(() => {
-            // Agora que a permissão foi concedida, chamamos 'eth_requestAccounts'
-            return window.ethereum.request({ method: 'eth_requestAccounts' });
-        })
-        .then(accounts => {
-            const connectBtn = document.getElementById('connect-wallet');
-            const disconnectBtn = document.getElementById('disconnect-wallet');
-            const walletSpan = document.getElementById('wallet-address');
-
-            if (accounts && accounts.length > 0) {
-            const address = accounts[0];
-            if (walletSpan && connectBtn && disconnectBtn) {
-                walletSpan.textContent = address;
-                walletSpan.style.display = 'inline-block';
-                connectBtn.style.display = 'none';
-                disconnectBtn.style.display = 'inline-block';
-                
-                // Salvar localmente (opcional)
-                localStorage.setItem('connectedWallet', address);
-            }
-            }
-        })
-        .catch(error => {
-            console.error("Erro ao conectar a carteira:", error);
-        });
-        }"""
-
-    @staticmethod
-    def disconnect_wallet_js():
-        return """
-        if (typeof window.ethereum === 'undefined') {
-            alert("MetaMask não encontrada. Verifique se está instalada e habilitada em seu navegador.");
-            return;
-        }
-        window.ethereum.request({
-            method: 'eth_requestAccounts',
-            params: [{ eth_accounts: {} }]
-        })
-        .then(() => {
-            const walletSpan = document.getElementById('wallet-address');
-            if (walletSpan) {
-                walletSpan.textContent = '';
-                walletSpan.style.display = 'none';
-            }
-            localStorage.removeItem('connectedWallet'); // Remove do localStorage
-            document.getElementById('connect-wallet').style.display = 'inline-block'; // Mostra conectar
-            document.getElementById('disconnect-wallet').style.display = 'none'; // Esconde desconectar
-        })
-        .catch(err => {
-            console.error("Erro ao desconectar a carteira:", err);
-        });
-        """
-
+from .integration import AppState, list_proposals, vote, execute_proposal
 
 
 def create_h3_heading(text):
@@ -258,6 +190,7 @@ def create_result_box(
         ),
     )
 
+
 def create_connect_wallet_button():
     """Create a 'Connect Wallet' button."""
     return rx.el.button(
@@ -274,6 +207,7 @@ def create_connect_wallet_button():
         color="#ffffff",
         on_click=rx.run_script(AppState.connect_wallet_js()),  # Correção: Passar o script diretamente
     )
+
 
 def create_disconnect_wallet_button():
     """Create a 'Disconnect Wallet' button."""
@@ -321,8 +255,6 @@ def create_header():
     )
 
 
-
-
 def create_header_container():
     """Container para o cabeçalho."""
     return rx.box(
@@ -336,7 +268,6 @@ def create_header_container():
         background_color="#ffffff",
         box_shadow="0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
     )
-
 
 
 def create_voting_section():
