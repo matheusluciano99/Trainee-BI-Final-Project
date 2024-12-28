@@ -112,12 +112,13 @@ token_contract = web3.eth.contract(address=TOKEN_ADDRESS, abi=token_abi)
 def create_proposal(title, description, voting_period, sender_address):
     try:
         # First create proposal on blockchain
-        nonce = web3.eth.get_transaction_count(sender_address)
+        nonce = web3.eth.get_transaction_count(Web3.to_checksum_address(sender_address))
         end_time = web3.eth.get_block('latest').timestamp + voting_period
+        print("Creating proposal...")
         tx = dao_contract.functions.createProposal(
             title, description, voting_period
         ).build_transaction({
-            'from': sender_address,
+            'from': Web3.to_checksum_address(sender_address),
             'nonce': nonce,
             'gas': 2000000,
             'gasPrice': web3.to_wei('20', 'gwei'),

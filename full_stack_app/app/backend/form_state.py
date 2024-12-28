@@ -16,13 +16,14 @@ class ProposalFormState(rx.State):
         
         try:
             # Hardcoded sender for testing - in production get from connected wallet
-            sender_address = "YOUR_ADDRESS_HERE"
+            sender_address = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
             create_proposal(
                 self.title,
                 self.description, 
                 self.voting_period,
                 sender_address
             )
+            print("Creating proposal...")
             # Reset form
             self.title = ""
             self.description = ""

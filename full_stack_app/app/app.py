@@ -153,7 +153,7 @@ def create_proposal_box(prop):
 
     # [ADDED] Exemplo de endereço hardcoded ou obtido do estado do front.
     # Idealmente, você buscaria o endereço conectado pelo usuário (“wallet-address”).
-    user_address = "0xSeuEnderecoAqui"  
+    user_address = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"  
 
     proposal_title = create_h3_heading(text=f"Proposal #{proposal_id}: {title}")
     proposal_desc = create_paragraph(text=description)
