@@ -1,6 +1,6 @@
 import reflex as rx
-from .integration import AppState, list_proposals, vote, execute_proposal
-
+from .backend.models import Proposal
+from .backend.integration import AppState, list_proposals, vote, execute_proposal
 
 def create_h3_heading(text):
     """Create an h3 heading with specific styling."""
