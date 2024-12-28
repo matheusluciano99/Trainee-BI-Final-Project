@@ -1,7 +1,9 @@
+import reflex as rx
 from web3 import Web3
 import json
 import os
 from dotenv import load_dotenv
+from .models import Proposal
 
 load_dotenv()
 
@@ -108,19 +110,39 @@ token_contract = web3.eth.contract(address=TOKEN_ADDRESS, abi=token_abi)
 # Funções de interação com os contratos
 
 def create_proposal(title, description, voting_period, sender_address):
-    nonce = web3.eth.get_transaction_count(sender_address)
-    tx = dao_contract.functions.createProposal(
-        title, description, voting_period
-    ).buildTransaction({
-        'from': sender_address,
-        'nonce': nonce,
-        'gas': 2000000,
-        'gasPrice': web3.to_wei('20', 'gwei'),
-    })
-    signed_tx = web3.eth.account.sign_transaction(tx, PRIVATE_KEY)
-    tx_hash = web3.eth.sendRawTransaction(signed_tx.rawTransaction)
-    receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
-    return receipt
+    try:
+        # First create proposal on blockchain
+        nonce = web3.eth.get_transaction_count(sender_address)
+        end_time = web3.eth.get_block('latest').timestamp + voting_period
+        tx = dao_contract.functions.createProposal(
+            title, description, voting_period
+        ).build_transaction({
+            'from': sender_address,
+            'nonce': nonce,
+            'gas': 2000000,
+            'gasPrice': web3.to_wei('20', 'gwei'),
+        })
+        signed_tx = web3.eth.account.sign_transaction(tx, PRIVATE_KEY)
+        tx_hash = web3.eth.send_raw_transaction(signed_tx.raw_transaction)
+        receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+
+        # Then store in database using Reflex session
+        with rx.session() as session:
+            new_proposal = Proposal(
+                title=title,
+                description=description,
+                end_time=end_time,
+                for_votes=0,
+                against_votes=0,
+                executed=False,
+                proposer=sender_address,
+            )
+            session.add(new_proposal)
+            session.commit()
+
+        return receipt
+    except Exception as e:
+        raise Exception("Failed to create the proposal.")
 
 def vote(proposal_id, support, sender_address):
     """Registra um voto em uma proposta."""

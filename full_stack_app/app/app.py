@@ -1,6 +1,7 @@
 import reflex as rx
 from .backend.models import Proposal
 from .backend.integration import AppState, list_proposals, vote, execute_proposal
+from .backend.form_state import ProposalFormState
 
 def create_h3_heading(text):
     """Create an h3 heading with specific styling."""
@@ -89,6 +90,54 @@ def create_voting_buttons(proposal_id, user_address):
         vote_no_button,
         display="flex",
         column_gap="1rem",
+    )
+
+
+def create_proposal_form():
+    """Create a form for submitting new proposals."""
+    return rx.vstack(
+        rx.button(
+            "Create New Proposal",
+            on_click=ProposalFormState.toggle_form,
+            bg="blue.500",
+            color="white",
+            _hover={"bg": "blue.600"},
+        ),
+        rx.cond(
+            ProposalFormState.show_form,
+            rx.vstack(
+                rx.input(
+                    placeholder="Proposal Title",
+                    on_change=ProposalFormState.set_title,
+                    value=ProposalFormState.title,
+                ),
+                rx.text_area(
+                    placeholder="Proposal Description",
+                    on_change=ProposalFormState.set_description,
+                    value=ProposalFormState.description,
+                ),
+                rx.input(
+                    placeholder="Voting Period (in seconds)",
+                    on_change=ProposalFormState.set_voting_period,
+                    value=ProposalFormState.voting_period,
+                ),
+                rx.button(
+                    "Submit Proposal",
+                    on_click=ProposalFormState.create_new_proposal,
+                    bg="green.500",
+                    color="white",
+                    _hover={"bg": "green.600"},
+                ),
+                padding="1",
+                bg="white",
+                border_radius="md",
+                width="100%",
+                max_width="500px",
+            ),
+        ),
+        align_items="stretch",
+        spacing="1",
+        width="100%",
     )
 
 
@@ -312,6 +361,7 @@ def create_results_section():
 def create_main_content():
     """Create the main content area with voting and results sections."""
     return rx.box(
+        create_proposal_form(),
         create_voting_section(),
         create_results_section(),
         width="100%",
