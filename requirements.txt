@@ -1,0 +1,3 @@
+reflex
+web3
+python-dotenv

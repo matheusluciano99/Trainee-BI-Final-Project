@@ -6,7 +6,7 @@ Para rodar o projeto, instale as seguintes dependencias:
 
 - Foundry
 - Reflex
-- Web3.py
+- web3
 - python-dotenv
 
 Devido a um problema ao compilar o codigo para react usando reflex, realize o procedimento abaixo para rodar o codigo corretamente:
