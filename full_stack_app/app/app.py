@@ -1,7 +1,8 @@
 import reflex as rx
-from .backend.models import Proposal
-from .backend.integration import AppState, list_proposals, vote, execute_proposal
-from .backend.form_state import ProposalFormState
+from web3 import Web3
+from .backend.integration import list_proposals, vote, execute_proposal
+from .backend.proposal_state import ProposalFormState
+from .backend.wallet_state import WalletState
 
 def create_h3_heading(text):
     """Create an h3 heading with specific styling."""
@@ -69,6 +70,7 @@ def create_voting_buttons(proposal_id, user_address):
         border_radius="0.25rem",
         color="#ffffff",
         on_click=lambda: vote(proposal_id, True, user_address),
+        disabled= ~WalletState.is_connected
     )
 
     vote_no_button = rx.el.button(
@@ -83,6 +85,7 @@ def create_voting_buttons(proposal_id, user_address):
         border_radius="0.25rem",
         color="#ffffff",
         on_click=lambda: vote(proposal_id, False, user_address),
+        disabled= ~WalletState.is_connected
     )
 
     return rx.flex(
@@ -157,7 +160,7 @@ def create_proposal_box(prop):
 
     proposal_title = create_h3_heading(text=f"Proposal #{proposal_id}: {title}")
     proposal_desc = create_paragraph(text=description)
-    voting_buttons = create_voting_buttons(proposal_id, user_address)
+    voting_buttons = create_voting_buttons(proposal_id, Web3.to_checksum_address(user_address))
 
     # [ADDED] Botão para executar a proposta (visível apenas se !executed)
     execute_button = rx.el.button(
@@ -254,7 +257,7 @@ def create_connect_wallet_button():
         padding_bottom="0.5rem",
         border_radius="0.25rem",
         color="#ffffff",
-        on_click=rx.run_script(AppState.connect_wallet_js()),  # Correção: Passar o script diretamente
+        on_click=rx.run_script(WalletState.connect_wallet_js()),  # Correção: Passar o script diretamente
     )
 
 
@@ -272,7 +275,7 @@ def create_disconnect_wallet_button():
         padding_bottom="0.5rem",
         border_radius="0.25rem",
         color="#ffffff",
-        on_click=rx.run_script(AppState.disconnect_wallet_js()),  # Correção: Passar o script diretamente
+        on_click=rx.run_script(WalletState.disconnect_wallet_js()),  # Correção: Passar o script diretamente
         display="none",  # Inicialmente escondido
     )
 
@@ -326,7 +329,22 @@ def create_voting_section():
     for prop in proposals:
         proposal_boxes.append(create_proposal_box(prop))
 
-    return rx.box(*proposal_boxes)
+    return rx.box(
+        create_h2_heading(text="Active Proposals"),
+        rx.box(
+            *proposal_boxes,
+            display="flex",
+            flex_direction="column",
+            gap="1.5rem",
+        ),
+        id="voting-section",
+        background_color="#ffffff",
+        margin_bottom="2rem",
+        padding="1.5rem",
+        border_radius="0.5rem",
+        box_shadow="0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+        # on_mount=ProposalFormState.on_mount,
+    )
 
 
 def create_results_section():

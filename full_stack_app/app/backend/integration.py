@@ -3,7 +3,6 @@ from web3 import Web3
 import json
 import os
 from dotenv import load_dotenv
-from .models import Proposal
 
 load_dotenv()
 
@@ -17,76 +16,6 @@ PRIVATE_KEY = os.getenv("PRIVATE_KEY")
 web3 = Web3(Web3.HTTPProvider(RPC_URL))
 if not web3.is_connected():
     raise Exception("Failed to connect to the blockchain.")
-
-class AppState:
-    @staticmethod
-    def connect_wallet_js():
-        return """
-        {   
-            if (typeof window.ethereum === 'undefined') {
-                alert("MetaMask não encontrada. Verifique se está instalada e habilitada em seu navegador.");
-                return;
-            }
-            
-            // Método que dispara o pop-up de conexão
-            window.ethereum.request({
-                method: 'wallet_requestPermissions',
-                params: [{ eth_accounts: {} }]
-            })
-            .then(() => {
-                // Agora que a permissão foi concedida, chamamos 'eth_requestAccounts'
-                return window.ethereum.request({ method: 'eth_requestAccounts' });
-            })
-            .then(accounts => {
-                const connectBtn = document.getElementById('connect-wallet');
-                const disconnectBtn = document.getElementById('disconnect-wallet');
-                const walletSpan = document.getElementById('wallet-address');
-
-                if (accounts && accounts.length > 0) {
-                const address = accounts[0];
-                if (walletSpan && connectBtn && disconnectBtn) {
-                    walletSpan.textContent = address;
-                    walletSpan.style.display = 'inline-block';
-                    connectBtn.style.display = 'none';
-                    disconnectBtn.style.display = 'inline-block';
-                    
-                    // Salvar localmente (opcional)
-                    localStorage.setItem('connectedWallet', address);
-                }
-                }
-            })
-            .catch(error => {
-                console.error("Erro ao conectar a carteira:", error);
-            });
-        }"""
-
-    @staticmethod
-    def disconnect_wallet_js():
-        return """
-        {
-            if (typeof window.ethereum === 'undefined') {
-                alert("MetaMask não encontrada. Verifique se está instalada e habilitada em seu navegador.");
-                return;
-            }
-            window.ethereum.request({
-                method: 'eth_requestAccounts',
-                params: [{ eth_accounts: {} }]
-            })
-            .then(() => {
-                const walletSpan = document.getElementById('wallet-address');
-                if (walletSpan) {
-                    walletSpan.textContent = '';
-                    walletSpan.style.display = 'none';
-                }
-                localStorage.removeItem('connectedWallet'); // Remove do localStorage
-                document.getElementById('connect-wallet').style.display = 'inline-block'; // Mostra conectar
-                document.getElementById('disconnect-wallet').style.display = 'none'; // Esconde desconectar
-            })
-            .catch(err => {
-                console.error("Erro ao desconectar a carteira:", err);
-            });
-        }"""
-
 
 # Função para carregar a ABI a partir do arquivo JSON
 def load_abi(contract_name:str):
@@ -114,7 +43,6 @@ def create_proposal(title, description, voting_period, sender_address):
         # First create proposal on blockchain
         nonce = web3.eth.get_transaction_count(Web3.to_checksum_address(sender_address))
         end_time = web3.eth.get_block('latest').timestamp + voting_period
-        print("Creating proposal...")
         tx = dao_contract.functions.createProposal(
             title, description, voting_period
         ).build_transaction({
@@ -127,52 +55,49 @@ def create_proposal(title, description, voting_period, sender_address):
         tx_hash = web3.eth.send_raw_transaction(signed_tx.raw_transaction)
         receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
 
-        # Then store in database using Reflex session
-        with rx.session() as session:
-            new_proposal = Proposal(
-                title=title,
-                description=description,
-                end_time=end_time,
-                for_votes=0,
-                against_votes=0,
-                executed=False,
-                proposer=sender_address,
-            )
-            session.add(new_proposal)
-            session.commit()
-
         return receipt
     except Exception as e:
         raise Exception("Failed to create the proposal.")
 
 def vote(proposal_id, support, sender_address):
-    """Registra um voto em uma proposta."""
-    nonce = web3.eth.get_transaction_count(sender_address)
-    tx = dao_contract.functions.vote(proposal_id, support).build_transaction({
-        'from': sender_address,
-        'nonce': nonce,
-        'gas': 2000000,
-        'gasPrice': web3.to_wei('20', 'gwei')
-    })
-    signed_tx = web3.eth.account.sign_transaction(tx, PRIVATE_KEY)
-    tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction)
-    receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
-    return receipt
+    """Cast a vote on a proposal."""
+    try:
+        # Execute blockchain transaction
+        nonce = web3.eth.get_transaction_count(Web3.to_checksum_address(sender_address))
+        tx = dao_contract.functions.castVote(proposal_id, support).build_transaction({
+            'from': Web3.to_checksum_address(sender_address),
+            'nonce': nonce,
+            'gas': 2000000,
+            'gasPrice': web3.to_wei('20', 'gwei')
+        })
+        signed_tx = web3.eth.account.sign_transaction(tx, PRIVATE_KEY)
+        tx_hash = web3.eth.send_raw_transaction(signed_tx.raw_transaction)
+        web3.eth.wait_for_transaction_receipt(tx_hash)
+        
+        # Return UI event
+        return rx.window_alert(f"Vote cast successfully! {'For' if support else 'Against'} proposal {proposal_id}")
+    except Exception as e:
+        return rx.window_alert(f"Error casting vote: {str(e)}")
 
 
 def execute_proposal(proposal_id, sender_address):
     """Executa uma proposta caso os critérios sejam atingidos."""
-    nonce = web3.eth.get_transaction_count(sender_address)
-    tx = dao_contract.functions.executeProposal(proposal_id).build_transaction({
-        'from': sender_address,
-        'nonce': nonce,
-        'gas': 3000000,
-        'gasPrice': web3.to_wei('20', 'gwei')
-    })
-    signed_tx = web3.eth.account.sign_transaction(tx, PRIVATE_KEY)
-    tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction)
-    receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
-    return receipt
+    try:
+        nonce = web3.eth.get_transaction_count(Web3.to_checksum_address(sender_address))
+        tx = dao_contract.functions.executeProposal(proposal_id).build_transaction({
+            'from': Web3.to_checksum_address(sender_address),
+            'nonce': nonce,
+            'gas': 3000000,
+            'gasPrice': web3.to_wei('20', 'gwei')
+        })
+        signed_tx = web3.eth.account.sign_transaction(tx, PRIVATE_KEY)
+        tx_hash = web3.eth.send_raw_transaction(signed_tx.raw_transaction)
+        web3.eth.wait_for_transaction_receipt(tx_hash)
+        
+        # Return UI event instead of receipt
+        return rx.window_alert("Proposal executed successfully!")
+    except Exception as e:
+        return rx.window_alert(f"Error executing proposal: {str(e)}")
 
 
 def get_proposal(proposal_id):

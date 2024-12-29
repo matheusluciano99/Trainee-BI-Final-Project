@@ -7,6 +7,9 @@ class ProposalFormState(rx.State):
     voting_period: int = 0
     show_form: bool = False
 
+    def handle_submit(self):
+        pass
+
     def toggle_form(self):
         self.show_form = not self.show_form
 
@@ -23,12 +26,12 @@ class ProposalFormState(rx.State):
                 self.voting_period,
                 sender_address
             )
-            print("Creating proposal...")
             # Reset form
             self.title = ""
             self.description = ""
             self.voting_period = 0
             self.show_form = False
+
             return rx.window_alert("Proposal created successfully!")
         except Exception as e:
             return rx.window_alert(f"Error creating proposal: {str(e)}")
