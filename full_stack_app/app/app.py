@@ -1,6 +1,6 @@
 import reflex as rx
 from web3 import Web3
-from .backend.integration import list_proposals, vote, execute_proposal
+from .backend.integration import vote, execute_proposal
 from .backend.proposal_state import ProposalFormState
 from .backend.wallet_state import WalletState
 
@@ -144,7 +144,7 @@ def create_proposal_form():
     )
 
 
-def create_proposal_box(prop):
+def create_proposal_box(prop: dict):
     """
     Create a box containing a proposal title, description, voting buttons,
     and, opcionalmente, an 'Execute Proposal' button se ainda não foi executado.
@@ -175,7 +175,11 @@ def create_proposal_box(prop):
         border_radius="0.25rem",
         color="#ffffff",
         on_click=lambda: execute_proposal(proposal_id, user_address),
-        display="block" if not executed else "none",  # Esconde se já executada
+        display=rx.cond(
+            executed,
+            "none",  # Esconde se já
+            "block",  # Mostra se não
+        )  # Esconde se já executada
     )
 
     return rx.box(
@@ -323,27 +327,19 @@ def create_header_container():
 
 
 def create_voting_section():
-    """Dynamically create boxes for each proposal using integration.py."""
-    proposals = list_proposals()
-    proposal_boxes = []
-    for prop in proposals:
-        proposal_boxes.append(create_proposal_box(prop))
-
+    """Create voting section with reactive proposal list."""
     return rx.box(
         create_h2_heading(text="Active Proposals"),
-        rx.box(
-            *proposal_boxes,
-            display="flex",
-            flex_direction="column",
-            gap="1.5rem",
+        rx.foreach(
+            ProposalFormState.proposals,
+            lambda prop: create_proposal_box(prop)  # Remove dict() conversion here
         ),
         id="voting-section",
         background_color="#ffffff",
         margin_bottom="2rem",
         padding="1.5rem",
         border_radius="0.5rem",
-        box_shadow="0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-        # on_mount=ProposalFormState.on_mount,
+        box_shadow="0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)"
     )
 
 
