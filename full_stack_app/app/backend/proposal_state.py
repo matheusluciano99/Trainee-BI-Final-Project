@@ -1,9 +1,9 @@
 import reflex as rx
-import asyncio
-from .integration import create_proposal, list_proposals
+from .integration import create_proposal, list_proposals, vote
+from .wallet_state import WalletState
 from typing import List, Dict
 
-class ProposalFormState(rx.State):
+class ProposalState(rx.State):
     title: str = ""
     description: str = ""
     voting_period: int = 0
@@ -50,3 +50,19 @@ class ProposalFormState(rx.State):
             return rx.window_alert("Proposal created successfully!")
         except Exception as e:
             return rx.window_alert(f"Error creating proposal: {str(e)}")
+        
+    @rx.event(background=True)
+    async def vote_on_proposal(self, proposal_id: int, support: bool):
+        """Handle voting through state management."""
+        try:
+            sender_address = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+            async with self:
+                vote(
+                    proposal_id, 
+                    support, 
+                    sender_address
+                )
+            
+            return rx.window_alert("Vote submitted successfully!")
+        except Exception as e:
+            return rx.window_alert(f"Error voting: {str(e)}")

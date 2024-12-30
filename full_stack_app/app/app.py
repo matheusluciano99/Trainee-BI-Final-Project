@@ -1,7 +1,7 @@
 import reflex as rx
 from web3 import Web3
 from .backend.integration import vote, execute_proposal
-from .backend.proposal_state import ProposalFormState
+from .backend.proposal_state import ProposalState
 from .backend.wallet_state import WalletState
 
 def create_h3_heading(text):
@@ -50,8 +50,8 @@ def create_voting_buttons(proposal_id):
         padding_bottom="0.5rem",
         border_radius="0.25rem",
         color="#ffffff",
-        on_click=vote(proposal_id, True, rx.run_script("window.ethereum.selectedAddress")),
-        disabled=~WalletState.is_connected
+        on_click=ProposalState.vote_on_proposal(proposal_id, True),
+        disabled=WalletState.is_connected
     )
 
     vote_no_button = rx.el.button(
@@ -65,8 +65,8 @@ def create_voting_buttons(proposal_id):
         padding_bottom="0.5rem",
         border_radius="0.25rem",
         color="#ffffff",
-        on_click=vote(proposal_id, False, rx.run_script("window.ethereum.selectedAddress")),
-        disabled=~WalletState.is_connected
+        on_click=ProposalState.vote_on_proposal(proposal_id, False),
+        disabled=WalletState.is_connected
     )
 
     return rx.flex(
@@ -103,32 +103,32 @@ def create_proposal_form():
     return rx.vstack(
         rx.button(
             "Create New Proposal",
-            on_click=ProposalFormState.toggle_form,
+            on_click=ProposalState.toggle_form,
             bg="blue.500",
             color="white",
             _hover={"bg": "blue.600"},
         ),
         rx.cond(
-            ProposalFormState.show_form,
+            ProposalState.show_form,
             rx.vstack(
                 rx.input(
                     placeholder="Proposal Title",
-                    on_change=ProposalFormState.set_title,
-                    value=ProposalFormState.title,
+                    on_change=ProposalState.set_title,
+                    value=ProposalState.title,
                 ),
                 rx.text_area(
                     placeholder="Proposal Description",
-                    on_change=ProposalFormState.set_description,
-                    value=ProposalFormState.description,
+                    on_change=ProposalState.set_description,
+                    value=ProposalState.description,
                 ),
                 rx.input(
                     placeholder="Voting Period (in seconds)",
-                    on_change=ProposalFormState.set_voting_period,
-                    value=ProposalFormState.voting_period,
+                    on_change=ProposalState.set_voting_period,
+                    value=ProposalState.voting_period,
                 ),
                 rx.button(
                     "Submit Proposal",
-                    on_click=ProposalFormState.create_new_proposal,
+                    on_click=ProposalState.create_new_proposal,
                     bg="green.500",
                     color="white",
                     _hover={"bg": "green.600"},
@@ -169,8 +169,12 @@ def create_proposal_box(prop: dict):
     return rx.box(
         proposal_title,
         proposal_desc,
-        voting_buttons,
-        create_execute_button(proposal_id, executed),
+        rx.hstack(
+            voting_buttons,
+            create_execute_button(proposal_id, executed),
+            display="flex",
+            justify_content="space-between",
+        ),
         border_bottom_width="1px",
         padding_bottom="1rem",
         display=rx.cond(
@@ -320,7 +324,7 @@ def create_voting_section():
     return rx.box(
         create_h2_heading(text="Active Proposals"),
         rx.foreach(
-            ProposalFormState.proposals,
+            ProposalState.proposals,
             lambda prop: create_proposal_box(prop)
         ),
         id="voting-section",
@@ -446,4 +450,4 @@ def index():
     )
 
 app = rx.App()
-app.add_page(index, on_load=ProposalFormState.get_proposals)
+app.add_page(index, on_load=ProposalState.get_proposals)
