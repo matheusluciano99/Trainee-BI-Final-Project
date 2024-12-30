@@ -35,28 +35,9 @@ def create_paragraph(text):
     )
 
 
-def create_styled_button(
-    hover_styles, background_color, text, proposal_id, user_address
-):
-    """Create a styled button with customizable hover effects and background color."""
-    return rx.el.button(
-        text,
-        background_color=background_color,
-        font_weight="700",
-        _hover=hover_styles,
-        padding_left="1rem",
-        padding_right="1rem",
-        padding_top="0.5rem",
-        padding_bottom="0.5rem",
-        border_radius="0.25rem",
-        color="#ffffff",
-        on_click=lambda: vote(proposal_id, True, user_address),
-    )
-
-
-def create_voting_buttons(proposal_id, user_address):
+def create_voting_buttons(proposal_id):
     """Create a flex container with 'Yes' and 'No' voting buttons."""
-
+    sender_address = WalletState.address
     # [ADDED] Passamos on_click como parâmetro para o botão, chamando 'vote' do integration.py
     vote_yes_button = rx.el.button(
         "Vote Yes",
@@ -69,8 +50,8 @@ def create_voting_buttons(proposal_id, user_address):
         padding_bottom="0.5rem",
         border_radius="0.25rem",
         color="#ffffff",
-        on_click=lambda: vote(proposal_id, True, user_address),
-        disabled= ~WalletState.is_connected
+        on_click=vote(proposal_id, True, rx.run_script("window.ethereum.selectedAddress")),
+        disabled=~WalletState.is_connected
     )
 
     vote_no_button = rx.el.button(
@@ -84,8 +65,8 @@ def create_voting_buttons(proposal_id, user_address):
         padding_bottom="0.5rem",
         border_radius="0.25rem",
         color="#ffffff",
-        on_click=lambda: vote(proposal_id, False, user_address),
-        disabled= ~WalletState.is_connected
+        on_click=vote(proposal_id, False, rx.run_script("window.ethereum.selectedAddress")),
+        disabled=~WalletState.is_connected
     )
 
     return rx.flex(
@@ -93,6 +74,27 @@ def create_voting_buttons(proposal_id, user_address):
         vote_no_button,
         display="flex",
         column_gap="1rem",
+    )
+
+
+def create_execute_button(proposal_id, executed):
+    return rx.el.button(
+        rx.cond(
+            executed,
+            "Executed",  # Texto se já executada
+            "Execute Proposal",  # Texto se não
+        ),
+        background_color="#3B82F6",
+        font_weight="700",
+        _hover={"background-color": "#2563EB"},
+        padding_left="1rem",
+        padding_right="1rem",
+        padding_top="0.5rem",
+        padding_bottom="0.5rem",
+        border_radius="0.25rem",
+        color="#ffffff",
+        on_click=lambda: execute_proposal(proposal_id, WalletState.address),
+        display="block"
     )
 
 
@@ -156,39 +158,26 @@ def create_proposal_box(prop: dict):
 
     # [ADDED] Exemplo de endereço hardcoded ou obtido do estado do front.
     # Idealmente, você buscaria o endereço conectado pelo usuário (“wallet-address”).
-    user_address = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"  
+    user_address = WalletState.address  
 
     proposal_title = create_h3_heading(text=f"Proposal #{proposal_id}: {title}")
     proposal_desc = create_paragraph(text=description)
-    voting_buttons = create_voting_buttons(proposal_id, Web3.to_checksum_address(user_address))
+    voting_buttons = create_voting_buttons(proposal_id)
 
     # [ADDED] Botão para executar a proposta (visível apenas se !executed)
-    execute_button = rx.el.button(
-        "Execute Proposal",
-        background_color="#3B82F6",
-        font_weight="700",
-        _hover={"background-color": "#2563EB"},
-        padding_left="1rem",
-        padding_right="1rem",
-        padding_top="0.5rem",
-        padding_bottom="0.5rem",
-        border_radius="0.25rem",
-        color="#ffffff",
-        on_click=lambda: execute_proposal(proposal_id, user_address),
-        display=rx.cond(
-            executed,
-            "none",  # Esconde se já
-            "block",  # Mostra se não
-        )  # Esconde se já executada
-    )
 
     return rx.box(
         proposal_title,
         proposal_desc,
         voting_buttons,
-        execute_button,
+        create_execute_button(proposal_id, executed),
         border_bottom_width="1px",
         padding_bottom="1rem",
+        display=rx.cond(
+            executed,
+            "none",  # Esconde se já
+            "block",  # Mostra se não
+        )
     )
 
 
@@ -332,7 +321,7 @@ def create_voting_section():
         create_h2_heading(text="Active Proposals"),
         rx.foreach(
             ProposalFormState.proposals,
-            lambda prop: create_proposal_box(prop)  # Remove dict() conversion here
+            lambda prop: create_proposal_box(prop)
         ),
         id="voting-section",
         background_color="#ffffff",
@@ -457,4 +446,4 @@ def index():
     )
 
 app = rx.App()
-app.add_page(index)
+app.add_page(index, on_load=ProposalFormState.get_proposals)

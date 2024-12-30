@@ -10,11 +10,6 @@ class ProposalFormState(rx.State):
     show_form: bool = False
     proposals: List[Dict[str, str]] = list_proposals if isinstance(list_proposals, list) else []
 
-    @rx.event
-    async def on_mount(self):
-        """Load proposals when component mounts."""
-        await self.get_proposals()
-        
 
     @rx.event
     async def get_proposals(self):

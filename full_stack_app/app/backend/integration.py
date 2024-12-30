@@ -42,7 +42,6 @@ def create_proposal(title, description, voting_period, sender_address):
     try:
         # First create proposal on blockchain
         nonce = web3.eth.get_transaction_count(Web3.to_checksum_address(sender_address))
-        end_time = web3.eth.get_block('latest').timestamp + voting_period
         tx = dao_contract.functions.createProposal(
             title, description, voting_period
         ).build_transaction({
@@ -70,12 +69,8 @@ def vote(proposal_id, support, sender_address):
             'gas': 2000000,
             'gasPrice': web3.to_wei('20', 'gwei')
         })
-        signed_tx = web3.eth.account.sign_transaction(tx, PRIVATE_KEY)
-        tx_hash = web3.eth.send_raw_transaction(signed_tx.raw_transaction)
-        web3.eth.wait_for_transaction_receipt(tx_hash)
-        
         # Return UI event
-        return rx.window_alert(f"Vote cast successfully! {'For' if support else 'Against'} proposal {proposal_id}")
+        return tx
     except Exception as e:
         return rx.window_alert(f"Error casting vote: {str(e)}")
 
@@ -90,12 +85,7 @@ def execute_proposal(proposal_id, sender_address):
             'gas': 3000000,
             'gasPrice': web3.to_wei('20', 'gwei')
         })
-        signed_tx = web3.eth.account.sign_transaction(tx, PRIVATE_KEY)
-        tx_hash = web3.eth.send_raw_transaction(signed_tx.raw_transaction)
-        web3.eth.wait_for_transaction_receipt(tx_hash)
-        
-        # Return UI event instead of receipt
-        return rx.window_alert("Proposal executed successfully!")
+        return tx
     except Exception as e:
         return rx.window_alert(f"Error executing proposal: {str(e)}")
 
