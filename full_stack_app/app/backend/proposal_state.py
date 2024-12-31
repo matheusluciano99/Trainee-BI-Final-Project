@@ -1,5 +1,5 @@
 import reflex as rx
-from .integration import create_proposal, list_proposals, vote
+from .integration import create_proposal, list_proposals, vote, execute_proposal
 from .wallet_state import WalletState
 from typing import List, Dict
 
@@ -23,18 +23,25 @@ class ProposalState(rx.State):
     
     @rx.event(background=True)
     async def create_new_proposal(self):
-        if not self.title or not self.description or self.voting_period <= 0:
-            return
+        
+        async with self:
+            wallet_state = await self.get_state(WalletState)
+
+            if not self.title or not self.description or self.voting_period <= 0:
+                return rx.window_alert("Please fill all fields!")
+                
+            if not wallet_state.is_connected:
+                return rx.window_alert("Please connect your wallet!")
+
         
         try:
-            sender_address = print(WalletState.address)
-
             async with self:
+                wallet_state = await self.get_state(WalletState)
                 create_proposal(
                     self.title,
                     self.description, 
                     self.voting_period,
-                    sender_address
+                    wallet_state.address
                 )
                 # Reset form
                 self.title = ""
@@ -53,15 +60,40 @@ class ProposalState(rx.State):
     @rx.event(background=True)
     async def vote_on_proposal(self, proposal_id: int, support: bool):
         """Handle voting through state management."""
+
+        async with self:
+            wallet_state = await self.get_state(WalletState)
+                
+            if not wallet_state.is_connected:
+                return rx.window_alert("Please connect your wallet!")
+
         try:
-            sender_address = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
             async with self:
+                wallet_state = await self.get_state(WalletState)
                 vote(
                     proposal_id, 
                     support, 
-                    sender_address
+                    wallet_state.address
                 )
             
             return rx.window_alert("Vote submitted successfully!")
         except Exception as e:
             return rx.window_alert(f"Error voting: {str(e)}")
+        
+    @rx.event(background=True)
+    async def execute_proposal(self, proposal_id: int):
+        """Execute proposal with wallet check."""
+        async with self:
+            wallet_state = await self.get_state(WalletState)
+                
+            if not wallet_state.is_connected:
+                return rx.window_alert("Please connect your wallet!")
+
+        try:
+            async with self:
+                wallet_state = self.get_state(WalletState)
+                execute_proposal(proposal_id, wallet_state.address)
+                self.proposals = list_proposals()
+            return rx.window_alert("Proposal executed successfully!")
+        except Exception as e:
+            return rx.window_alert(f"Error executing proposal: {str(e)}")
