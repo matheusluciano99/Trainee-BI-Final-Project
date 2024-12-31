@@ -91,7 +91,7 @@ def create_execute_button(proposal_id, executed):
         padding_bottom="0.5rem",
         border_radius="0.25rem",
         color="#ffffff",
-        on_click=lambda: execute_proposal(proposal_id, WalletState.address),
+        on_click=ProposalState.execute_proposal(proposal_id),
         display="block"
     )
 

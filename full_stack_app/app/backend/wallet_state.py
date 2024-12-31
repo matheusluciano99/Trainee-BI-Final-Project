@@ -10,8 +10,6 @@ class WalletState(rx.State):
             self.address = address
             self.is_connected = bool(address)
         yield
-        print(f"Saving value {address}")
-        print(f"Saving value {self.is_connected}")
 
     @staticmethod
     def connect_wallet_js():
