@@ -4,17 +4,27 @@ class WalletState(rx.State):
     address: str = ""
     is_connected: bool = False
     
-    def set_address(self, address: str):
-        self.address = address
-        self.is_connected = bool(address)
+    @rx.event(background=True)
+    async def get_wallet_address(self):
+        return rx.call_script("""
+        async function getCurrentAddress() {
+            if (window.ethereum) {
+                const accounts = await window.ethereum.request({
+                    method: 'eth_accounts'
+                })
+                return accounts[0] || ''
+            }
+            return ''
+        }
+        getCurrentAddress()
+    """, callback=WalletState.set_wallet_address)
 
-    async def handle_wallet_connection(self):
-        """Handle wallet connection events from JS"""
-        return rx.run_script("""
-            window.addEventListener('walletConnected', (event) => {
-                setState('address', event.detail.address);
-            });
-        """)
+    @rx.event(background=True)
+    async def set_wallet_address(self, address: str):
+        async with self:
+            self.address = address
+        yield
+        print(f"Saving value {address}")
 
     @staticmethod
     def connect_wallet_js():
@@ -47,15 +57,8 @@ class WalletState(rx.State):
                     }));
                     
                     localStorage.setItem('connectedWallet', address);
+                    return address;
                 }
-                
-                window.ethereum.on('accountsChanged', function(accounts) {
-                    if (accounts.length > 0) {
-                        window.dispatchEvent(new CustomEvent('walletConnected', {
-                            detail: { address: accounts[0] }
-                        }));
-                    }
-                });
             } catch (err) {
                 console.error("Connection error:", err);
                 alert(err.message);

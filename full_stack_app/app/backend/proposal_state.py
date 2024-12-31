@@ -27,8 +27,7 @@ class ProposalState(rx.State):
             return
         
         try:
-            # Hardcoded sender for testing - in production get from connected wallet
-            sender_address = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+            sender_address = print(WalletState.address)
 
             async with self:
                 create_proposal(

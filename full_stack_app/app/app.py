@@ -1,6 +1,6 @@
 import reflex as rx
 from web3 import Web3
-from .backend.integration import vote, execute_proposal
+from .backend.integration import execute_proposal
 from .backend.proposal_state import ProposalState
 from .backend.wallet_state import WalletState
 
@@ -254,7 +254,7 @@ def create_connect_wallet_button():
         padding_bottom="0.5rem",
         border_radius="0.25rem",
         color="#ffffff",
-        on_click=rx.run_script(WalletState.connect_wallet_js()),  # Correção: Passar o script diretamente
+        on_click=rx.call_script(WalletState.connect_wallet_js(), callback=WalletState.set_wallet_address),
     )
 
 
@@ -272,7 +272,7 @@ def create_disconnect_wallet_button():
         padding_bottom="0.5rem",
         border_radius="0.25rem",
         color="#ffffff",
-        on_click=rx.run_script(WalletState.disconnect_wallet_js()),  # Correção: Passar o script diretamente
+        on_click=rx.call_script(WalletState.disconnect_wallet_js()),  # Correção: Passar o script diretamente
         display="none",  # Inicialmente escondido
     )
 
@@ -450,4 +450,4 @@ def index():
     )
 
 app = rx.App()
-app.add_page(index, on_load=ProposalState.get_proposals)
+app.add_page(index, on_load=[ProposalState.get_proposals])
