@@ -108,34 +108,35 @@ def create_proposal_form():
         ),
         rx.cond(
             ProposalState.show_form,
-            rx.vstack(
-                rx.input(
-                    placeholder="Proposal Title",
-                    on_change=ProposalState.set_title,
-                    value=ProposalState.title,
+            rx.form(
+                rx.vstack(
+                    rx.input(
+                        placeholder="Proposal Title",
+                        on_change=ProposalState.set_title,
+                    ),
+                    rx.text_area(
+                        placeholder="Proposal Description",
+                        on_change=ProposalState.set_description,
+                    ),
+                    rx.input(
+                        placeholder="Voting Period (in seconds)",
+                        on_change=ProposalState.set_voting_period,
+                    ),
+                    rx.button(
+                        "Submit Proposal",
+                        type="submit",
+                        bg="green.500",
+                        color="white",
+                        _hover={"bg": "green.600"},
+                    ),
+                    padding="1",
+                    bg="white",
+                    border_radius="md",
+                    width="100%",
+                    max_width="500px",
                 ),
-                rx.text_area(
-                    placeholder="Proposal Description",
-                    on_change=ProposalState.set_description,
-                    value=ProposalState.description,
-                ),
-                rx.input(
-                    placeholder="Voting Period (in seconds)",
-                    on_change=ProposalState.set_voting_period,
-                    value=ProposalState.voting_period,
-                ),
-                rx.button(
-                    "Submit Proposal",
-                    on_click=ProposalState.create_new_proposal(),
-                    bg="green.500",
-                    color="white",
-                    _hover={"bg": "green.600"},
-                ),
-                padding="1",
-                bg="white",
-                border_radius="md",
-                width="100%",
-                max_width="500px",
+                on_submit=ProposalState.create_new_proposal(),
+                reset_on_submit=True,
             ),
         ),
         align_items="stretch",
@@ -153,10 +154,6 @@ def create_proposal_box(prop: dict):
     executed = prop["executed"]
     title = prop["title"]
     description = prop["description"]
-
-    # [ADDED] Exemplo de endereço hardcoded ou obtido do estado do front.
-    # Idealmente, você buscaria o endereço conectado pelo usuário (“wallet-address”).
-    user_address = WalletState.address  
 
     proposal_title = create_h3_heading(text=f"Proposal #{proposal_id}: {title}")
     proposal_desc = create_paragraph(text=description)

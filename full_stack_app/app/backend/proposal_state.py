@@ -43,10 +43,8 @@ class ProposalState(rx.State):
                     self.voting_period,
                     wallet_state.address
                 )
+
                 # Reset form
-                self.title = ""
-                self.description = ""
-                self.voting_period = 0
                 self.show_form = False
 
                 # Convert proposals to plain dictionaries before setting state
