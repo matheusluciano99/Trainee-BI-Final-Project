@@ -34,10 +34,6 @@ class WalletState(rx.State):
                 
                 if (accounts && accounts.length > 0) {
                     const address = accounts[0];
-                    document.getElementById('wallet-address').textContent = address;
-                    document.getElementById('wallet-address').style.display = 'inline-block';
-                    document.getElementById('connect-wallet').style.display = 'none';
-                    document.getElementById('disconnect-wallet').style.display = 'inline-block';
                     
                     window.dispatchEvent(new CustomEvent('walletConnected', {
                         detail: { address: address }
@@ -59,10 +55,6 @@ class WalletState(rx.State):
         return """{
         async function disconnectWallet() {
             try {
-                document.getElementById('wallet-address').textContent = '';
-                document.getElementById('wallet-address').style.display = 'none';
-                document.getElementById('connect-wallet').style.display = 'inline-block';
-                document.getElementById('disconnect-wallet').style.display = 'none';
                 localStorage.removeItem('connectedWallet');
                 
                 window.dispatchEvent(new CustomEvent('walletConnected', {
