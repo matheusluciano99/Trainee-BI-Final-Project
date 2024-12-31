@@ -271,7 +271,6 @@ def create_disconnect_wallet_button():
         border_radius="0.25rem",
         color="#ffffff",
         on_click=rx.call_script(WalletState.disconnect_wallet_js(), callback=WalletState.set_wallet_address),
-        display="none",  # Inicialmente escondido
     )
 
 
@@ -287,14 +286,15 @@ def create_header():
             as_="h1",
         ),
         rx.box(
-            create_connect_wallet_button(),
-            create_disconnect_wallet_button(),
-            rx.text.span(
-                id="wallet-address",
-                display="none",
-                color="#4B5563",
+            rx.cond(
+                WalletState.is_connected,
+                rx.hstack(
+                    create_disconnect_wallet_button(),
+                    rx.text(WalletState.address, color="#4B5563"),
+                    align_items="center",
+                ),
+                create_connect_wallet_button(),   
             ),
-            id="wallet-section",
         ),
         display="flex",
         align_items="center",
