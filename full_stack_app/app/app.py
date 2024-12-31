@@ -51,7 +51,6 @@ def create_voting_buttons(proposal_id):
         border_radius="0.25rem",
         color="#ffffff",
         on_click=ProposalState.vote_on_proposal(proposal_id, True),
-        disabled=WalletState.is_connected
     )
 
     vote_no_button = rx.el.button(
@@ -66,7 +65,6 @@ def create_voting_buttons(proposal_id):
         border_radius="0.25rem",
         color="#ffffff",
         on_click=ProposalState.vote_on_proposal(proposal_id, False),
-        disabled=WalletState.is_connected
     )
 
     return rx.flex(
@@ -128,7 +126,7 @@ def create_proposal_form():
                 ),
                 rx.button(
                     "Submit Proposal",
-                    on_click=ProposalState.create_new_proposal,
+                    on_click=ProposalState.create_new_proposal(),
                     bg="green.500",
                     color="white",
                     _hover={"bg": "green.600"},
