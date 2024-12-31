@@ -3,28 +3,15 @@ import reflex as rx
 class WalletState(rx.State):
     address: str = ""
     is_connected: bool = False
-    
-    @rx.event(background=True)
-    async def get_wallet_address(self):
-        return rx.call_script("""
-        async function getCurrentAddress() {
-            if (window.ethereum) {
-                const accounts = await window.ethereum.request({
-                    method: 'eth_accounts'
-                })
-                return accounts[0] || ''
-            }
-            return ''
-        }
-        getCurrentAddress()
-    """, callback=WalletState.set_wallet_address)
 
     @rx.event(background=True)
     async def set_wallet_address(self, address: str):
         async with self:
             self.address = address
+            self.is_connected = bool(address)
         yield
         print(f"Saving value {address}")
+        print(f"Saving value {self.is_connected}")
 
     @staticmethod
     def connect_wallet_js():

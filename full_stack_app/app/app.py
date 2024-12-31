@@ -272,7 +272,7 @@ def create_disconnect_wallet_button():
         padding_bottom="0.5rem",
         border_radius="0.25rem",
         color="#ffffff",
-        on_click=rx.call_script(WalletState.disconnect_wallet_js()),  # Correção: Passar o script diretamente
+        on_click=rx.call_script(WalletState.disconnect_wallet_js(), callback=WalletState.set_wallet_address),
         display="none",  # Inicialmente escondido
     )
 
