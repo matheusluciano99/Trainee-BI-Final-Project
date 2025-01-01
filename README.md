@@ -58,3 +58,7 @@
   ### TokenBCI: 0x5e7084b61127A19175d47205eBaD403F6620870b
 
   ### DAO: 0x74706a37DDfaa1D7890ae4182009A6f4eb7DFA2C
+
+  ## Test Coverage:
+
+  ![alt text](image.png)
