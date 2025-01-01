@@ -77,8 +77,8 @@ def create_execute_button(proposal_id, executed):
     return rx.el.button(
         rx.cond(
             executed,
-            "Executed",  # Texto se já executada
-            "Execute Proposal",  # Texto se não
+            "Executed",  # Text if executed
+            "Execute Proposal",  # Text if not
         ),
         background_color="#3B82F6",
         font_weight="700",
@@ -162,7 +162,6 @@ def create_proposal_box(prop: dict):
     proposal_desc = create_paragraph(text=description)
     voting_buttons = create_voting_buttons(proposal_id)
 
-    # [ADDED] Botão para executar a proposta (visível apenas se !executed)
 
     return rx.box(
         proposal_title,
@@ -452,4 +451,4 @@ def index():
     )
 
 app = rx.App()
-app.add_page(index, on_load=[ProposalState.get_proposals])
+app.add_page(index, on_load=[ProposalState.get_proposals]) # Load proposals on page load

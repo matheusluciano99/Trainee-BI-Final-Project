@@ -6,6 +6,7 @@ class WalletState(rx.State):
 
     @rx.event(background=True)
     async def set_wallet_address(self, address: str):
+        """Set the wallet address and connection status."""
         async with self:
             self.address = address
             self.is_connected = bool(address)
@@ -13,6 +14,7 @@ class WalletState(rx.State):
 
     @staticmethod
     def connect_wallet_js():
+        """Connect the wallet and store the address in local storage."""
         return """{
         async function connectWallet() {
             try {
@@ -50,6 +52,7 @@ class WalletState(rx.State):
 
     @staticmethod
     def disconnect_wallet_js():
+        """Disconnect the wallet and remove the address from local storage."""
         return """{
         async function disconnectWallet() {
             try {

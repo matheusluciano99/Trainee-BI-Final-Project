@@ -6,18 +6,18 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Configurações
+# Settings
 RPC_URL = os.getenv("RPC_URL")
 DAO_ADDRESS = os.getenv("DAO_ADDRESS")
 TOKEN_ADDRESS = os.getenv("TOKEN_ADDRESS")
 PRIVATE_KEY = os.getenv("PRIVATE_KEY")
 
-# Conexão com o nó
+# Conection to the blockchain
 web3 = Web3(Web3.HTTPProvider(RPC_URL))
 if not web3.is_connected():
     raise Exception("Failed to connect to the blockchain.")
 
-# Função para carregar a ABI a partir do arquivo JSON
+# function to load the ABI of a contract
 def load_abi(contract_name:str):
     abi_path = os.path.join("../out", contract_name, f"{contract_name.strip('.sol')}.json")
     if not os.path.exists(abi_path):
@@ -28,17 +28,17 @@ def load_abi(contract_name:str):
             raise KeyError(f"'abi' não encontrado no arquivo {abi_path}.")
         return artifact["abi"]
 
-# Endereços e ABI dos contratos
+# Contract ABIs
 dao_abi = load_abi("DAO.sol")
 token_abi = load_abi("TokenDAO.sol")
 
-# Instância dos contratos
+# Contract instances
 dao_contract = web3.eth.contract(address=DAO_ADDRESS, abi=dao_abi)
 token_contract = web3.eth.contract(address=TOKEN_ADDRESS, abi=token_abi)
     
 # Funções de interação com os contratos
-
 def create_proposal(title, description, voting_period, sender_address):
+    """Create a proposal on the DAO."""
     try:
         # First create proposal on blockchain
         nonce = web3.eth.get_transaction_count(Web3.to_checksum_address(sender_address))
@@ -75,7 +75,7 @@ def vote(proposal_id, support, sender_address):
 
 
 def execute_proposal(proposal_id, sender_address):
-    """Executa uma proposta caso os critérios sejam atingidos."""
+    """Execeute a proposal."""
     try:
         nonce = web3.eth.get_transaction_count(Web3.to_checksum_address(sender_address))
         tx = dao_contract.functions.executeProposal(proposal_id).build_transaction({
@@ -92,9 +92,11 @@ def execute_proposal(proposal_id, sender_address):
 
 
 def get_proposal(proposal_id):
+    """Get proposal details."""
     return dao_contract.functions.getProposal(proposal_id).call()
 
 def list_proposals():
+    """List all proposals."""
     proposal_count = dao_contract.functions.proposalCount().call()
     proposals = []
     for i in range(1, proposal_count + 1):

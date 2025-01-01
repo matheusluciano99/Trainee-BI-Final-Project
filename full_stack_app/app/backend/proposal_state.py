@@ -15,7 +15,7 @@ class ProposalState(rx.State):
 
     @rx.event(background=True)
     async def send_transaction(self, tx_dict):
-        # Send transaction through MetaMask
+        """Send a transaction to the blockchain."""
         return rx.call_script(f"""{{
             async function sendTransaction() {{
                 try {{
@@ -42,6 +42,7 @@ class ProposalState(rx.State):
     
     @rx.event(background=True)
     async def create_new_proposal(self):
+        """Create a new proposal."""
         
         async with self:
             wallet_state = await self.get_state(WalletState)
