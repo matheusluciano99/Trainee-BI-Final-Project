@@ -224,7 +224,7 @@ def create_result_labels(left_label, right_label):
         line_height="1.25rem",
     )
 
-
+# To implement interactivity...
 def create_result_box(
     title, progress_width, yes_percentage, no_percentage
 ):
