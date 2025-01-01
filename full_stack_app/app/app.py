@@ -37,8 +37,6 @@ def create_paragraph(text):
 
 def create_voting_buttons(proposal_id):
     """Create a flex container with 'Yes' and 'No' voting buttons."""
-    sender_address = WalletState.address
-    # [ADDED] Passamos on_click como parâmetro para o botão, chamando 'vote' do integration.py
     vote_yes_button = rx.el.button(
         "Vote Yes",
         background_color="#10B981",
@@ -92,7 +90,12 @@ def create_execute_button(proposal_id, executed):
         border_radius="0.25rem",
         color="#ffffff",
         on_click=ProposalState.execute_proposal(proposal_id),
-        display="block"
+        display="block",
+        disabled=rx.cond(
+            executed,
+            True,  # Disabled if executed
+            False,  # Enabled if not
+        ),
     )
 
 
@@ -165,17 +168,21 @@ def create_proposal_box(prop: dict):
         proposal_title,
         proposal_desc,
         rx.hstack(
-            voting_buttons,
+            rx.cond(
+                executed,
+                rx.text(rx.text("Voting ended", color="gray.500")),
+                voting_buttons
+            ),
             create_execute_button(proposal_id, executed),
             display="flex",
             justify_content="space-between",
         ),
         border_bottom_width="1px",
         padding_bottom="1rem",
-        display=rx.cond(
+        opacity=rx.cond(
             executed,
-            "none",  # Esconde se já
-            "block",  # Mostra se não
+            "0.5",  # Dim if executed
+            "1.0",  # Normal if not executed
         )
     )
 
