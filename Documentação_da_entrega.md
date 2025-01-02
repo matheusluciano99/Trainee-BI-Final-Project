@@ -7,7 +7,7 @@ Optei por usar o foundry para os contratos, reflex, framework relativamente novo
 - Contrato da DAO
 - Contrato do Token BCI
 - Testes com boa abrangencia.
-- Frontend integrado com a blockchain, com chamadas de carteira.
+- Frontend integrado com a blockchain, com chamadas de carteira. O usuário consegue se conectar e desconectar, consegue criar uma proposta, votar nela e executá-la.
 
 ## Pontos faltantes:
 
