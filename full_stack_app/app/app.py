@@ -1,8 +1,7 @@
 import reflex as rx
-from web3 import Web3
-from .backend.integration import execute_proposal
 from .backend.proposal_state import ProposalState
 from .backend.wallet_state import WalletState
+
 
 def create_h3_heading(text):
     """Create an h3 heading with specific styling."""
@@ -30,9 +29,7 @@ def create_h2_heading(text):
 
 def create_paragraph(text):
     """Create a paragraph with specific styling."""
-    return rx.text(
-        text, margin_bottom="1rem", color="#4B5563"
-    )
+    return rx.text(text, margin_bottom="1rem", color="#4B5563")
 
 
 def create_voting_buttons(proposal_id):
@@ -162,7 +159,6 @@ def create_proposal_box(prop: dict):
     proposal_desc = create_paragraph(text=description)
     voting_buttons = create_voting_buttons(proposal_id)
 
-
     return rx.box(
         proposal_title,
         proposal_desc,
@@ -170,7 +166,7 @@ def create_proposal_box(prop: dict):
             rx.cond(
                 executed,
                 rx.text(rx.text("Voting ended", color="gray.500")),
-                voting_buttons
+                voting_buttons,
             ),
             create_execute_button(proposal_id, executed),
             display="flex",
@@ -182,7 +178,7 @@ def create_proposal_box(prop: dict):
             executed,
             "0.5",  # Dim if executed
             "1.0",  # Normal if not executed
-        )
+        ),
     )
 
 
@@ -224,16 +220,13 @@ def create_result_labels(left_label, right_label):
         line_height="1.25rem",
     )
 
+
 # To implement interactivity...
-def create_result_box(
-    title, progress_width, yes_percentage, no_percentage
-):
+def create_result_box(title, progress_width, yes_percentage, no_percentage):
     """Create a box displaying voting results with a title, progress bar, and percentages."""
     return rx.box(
         create_h3_heading(text=title),
-        create_progress_bar_container(
-            progress_width=progress_width
-        ),
+        create_progress_bar_container(progress_width=progress_width),
         create_result_labels(
             left_label=yes_percentage,
             right_label=no_percentage,
@@ -255,7 +248,9 @@ def create_connect_wallet_button():
         padding_bottom="0.5rem",
         border_radius="0.25rem",
         color="#ffffff",
-        on_click=rx.call_script(WalletState.connect_wallet_js(), callback=WalletState.set_wallet_address),
+        on_click=rx.call_script(
+            WalletState.connect_wallet_js(), callback=WalletState.set_wallet_address
+        ),
     )
 
 
@@ -273,7 +268,9 @@ def create_disconnect_wallet_button():
         padding_bottom="0.5rem",
         border_radius="0.25rem",
         color="#ffffff",
-        on_click=rx.call_script(WalletState.disconnect_wallet_js(), callback=WalletState.set_wallet_address),
+        on_click=rx.call_script(
+            WalletState.disconnect_wallet_js(), callback=WalletState.set_wallet_address
+        ),
     )
 
 
@@ -296,7 +293,7 @@ def create_header():
                     rx.text(WalletState.address, color="#4B5563"),
                     align_items="center",
                 ),
-                create_connect_wallet_button(),   
+                create_connect_wallet_button(),
             ),
         ),
         display="flex",
@@ -324,16 +321,13 @@ def create_voting_section():
     """Create voting section with reactive proposal list."""
     return rx.box(
         create_h2_heading(text="Active Proposals"),
-        rx.foreach(
-            ProposalState.proposals,
-            lambda prop: create_proposal_box(prop)
-        ),
+        rx.foreach(ProposalState.proposals, lambda prop: create_proposal_box(prop)),
         id="voting-section",
         background_color="#ffffff",
         margin_bottom="2rem",
         padding="1.5rem",
         border_radius="0.5rem",
-        box_shadow="0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)"
+        box_shadow="0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
     )
 
 
@@ -396,9 +390,7 @@ def create_footer():
     """Create the footer section with copyright information."""
     return rx.box(
         rx.box(
-            rx.text(
-                "© 2024 DAO Voting System. All rights reserved."
-            ),
+            rx.text("© 2024 DAO Voting System. All rights reserved."),
             width="100%",
             style=rx.breakpoints(
                 {
@@ -450,5 +442,8 @@ def index():
         ),
     )
 
+
 app = rx.App()
-app.add_page(index, on_load=[ProposalState.get_proposals]) # Load proposals on page load
+app.add_page(
+    index, on_load=[ProposalState.get_proposals]
+)  # Load proposals on page load
